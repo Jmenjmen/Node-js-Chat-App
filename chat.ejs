@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="./static/chat.css">
+	<title>Chat</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="http://www.jacklmoore.com/js/autosize.min.js"></script>
+</head>
+<body>
+	<div class="body">
+		<div class="search">
+			<form method="post" class="search_form">
+				<input type="text" name="username" class="search__input">
+				<button type="submit" class="search__button" onclick="parentClear()">search</button>
+			</form>
+			<hr>
+			<div class="cls">
+				<% chatHistory.forEach(elem => { %>
+			<div class="clients">
+				<form method="post" class="search_form">
+					<input type="hidden" value="<%= elem %>" name="username" class="search__input">
+					<button class="histoty" type="submit"><%= elem %></button>
+				</form>
+			</div>
+			<% }) %>
+			</div>
+		</div>
+		<div class="chat">
+			<div class="user">
+				 <p>user: <%= username %></p>
+			</div>
+	  
+			<div class="chat__message" style="overflow-y: auto; max-height: 85vh;">
+				 <ul class="parent__li">
+					  <!-- Здесь будут отрисовываться сообщения от текущего клиента -->
+				 </ul>
+			</div>
+
+			<div class="message_form">
+				<form method="POST" class="SendMsg">
+				<input type="hidden" class="usernameId">
+				<textarea rows="1" placeholder="Your message..." id="textMessage" class="message_input" name="message"></textarea>
+				<button onclick="sendMessage()" type="submit" class="message_button" title="send"><img style="width: 2.5vw;" src="https://img.icons8.com/?size=512&id=13842&format=png" alt=""></button>
+				</form>
+				
+		</div>
+	</div>
+	
+<script>
+	autosize(document.getElementById('textMessage'));
+
+	// Переменная для хранения текущего клиента
+	let currentClient = null;
+
+ 
+	const socket = new WebSocket("ws://localhost:3000/");
+	
+ 
+	socket.addEventListener("open", (e) => {
+	  // Ваш код для обработки события открытия соединения
+	});
+ 
+	socket.addEventListener("message", (e) => {
+	  if (event.data instanceof Blob) {
+		 reader = new FileReader();
+ 
+		 reader.onload = () => {
+			const message = reader.result;
+			console.log("Result1: " + message);
+			const parent = document.querySelector('.parent__li');
+			let li = document.createElement('li');
+			li.className = 'client';
+			li.innerHTML = `<p>${message}</p>`;
+			parent.appendChild(li);
+		 };
+ 
+		 const message = event.data;
+		 reader.readAsText(message);
+	  } else {
+		const message = JSON.parse(event.data);
+		console.log(message)
+		if(message.currentClient == currentClient){
+			const parent = document.querySelector('.parent__li');
+		let li = document.createElement('li');
+		li.className = 'client';
+		li.innerHTML = `<p>${message.content}</p>`;
+		parent.appendChild(li);
+		console.log("Result2: " + message.content);
+		}
+		const search__input = document.querySelectorAll(".search__input")
+		const inp = []
+		search__input.forEach(elem => {
+			if(!search__input[0]){
+				inp.push(elem.value)
+			}
+			
+		})
+		console.log(inp)
+		if(inp.indexOf(message.currentClient) == -1){
+			const body = document.querySelector(".cls")
+			const clientDiv = document.createElement("div")
+			const clientForm = document.createElement("form")
+			const hiddenINP = document.createElement("input")
+			const clientBTN = document.createElement('button')
+			clientDiv.setAttribute('class', 'clients')
+			clientForm.setAttribute('class', 'search_form')
+			clientForm.setAttribute('method', 'post')
+			hiddenINP.setAttribute('type', 'hidden')
+			hiddenINP.setAttribute('value', message.currentClient)
+			hiddenINP.setAttribute('name', 'username')
+			hiddenINP.setAttribute('class', 'search__input')
+			clientBTN.setAttribute('class', 'history')
+			clientBTN.setAttribute('type', 'submit')
+			clientBTN.innerText = message.currentClient
+			body.appendChild(clientDiv)
+			clientDiv.appendChild(clientForm)
+			clientForm.appendChild(hiddenINP)
+			clientForm.appendChild(clientBTN)
+			
+			const clientForm2 = document.querySelectorAll(".search_form")
+			clientForm2.forEach((elem) => {
+	  elem.addEventListener("submit", (e) => {
+		 e.preventDefault();
+		 let username = e.target.querySelector(".search__input").value;
+		 currentClient = username
+		 const body = JSON.stringify({ "username": username });
+		 fetch("/checkUser", {
+			method: "POST",
+			body: body,
+			headers: {
+			  "Content-Type": "application/json"
+			}
+		 }).then((response) => {
+			if (response.status === 200) {
+			  response.json().then(async (data) => {
+				 console.log(data.ownerMessage);
+				 console.log(data.ClientMessage);
+				 try {
+					let clientMessages = [];
+					let ownerMessages = [];
+ 
+					if (data.ClientMessage && data.ClientMessage.message.length > 0 && data.ClientMessage.time.length > 0) {
+					  const clM = data.ClientMessage.message[0];
+					  const clMTimes = data.ClientMessage.time[0];
+					  clientMessages = clM.map((message, index) => ({
+						 message,
+						 time: clMTimes[index],
+						 type: 'client',
+					  }));
+					  let parent = document.querySelector(".parent__li");
+					  let foo = parent.querySelector("li")
+					  while(foo){
+						parent.removeChild(foo)
+					  }
+					}
+ 
+					if (data.ownerMessage && data.ownerMessage.message.length > 0 && data.ownerMessage.time.length > 0) {
+					  const owM = data.ownerMessage.message[0];
+					  const owMTimes = data.ownerMessage.time[0];
+					  ownerMessages = owM.map((message, index) => ({
+						 message,
+						 time: owMTimes[index],
+						 type: 'owner',
+					  }));
+					}
+ 
+					const mergedMessages = [...clientMessages, ...ownerMessages];
+ 
+					mergedMessages.sort((a, b) => new Date(parseInt(a.time)) - new Date(parseInt(b.time)));
+ 
+					console.log(mergedMessages);
+ 
+					mergedMessages.forEach(elem => {
+					  let parent = document.querySelector(".parent__li");
+					  if (elem.type == 'client') {
+						 let li = document.createElement('li');
+						 li.className = 'client';
+						 li.innerHTML = `<p>${elem.message}</p>`;
+						 parent.appendChild(li);
+					  } else {
+						 let li = document.createElement('li');
+						 li.className = 'owner';
+						 li.innerHTML = `<p>${elem.message}</p>`;
+						 parent.appendChild(li);
+					  }
+					});
+				 } catch (e) {
+					console.log(e);
+				 }
+ 
+				 document.querySelector(".usernameId").value = data.usernameId;
+			  });
+			}
+		 }).catch((e) => console.log);
+	  });
+	});
+		}
+	  }
+	});
+ 
+	 const sendMessage = () => {
+        let message = document.querySelector(".message_input").value;
+        let usernameId = document.querySelector(".usernameId").value;
+
+        // Проверяем, что текущий клиент установлен, иначе не отправляем сообщение
+        if (currentClient) {
+            const messageData = JSON.stringify({ "usernameId": usernameId, "message": message });
+            socket.send(messageData);
+        }
+    };
+ 
+
+	const checkUser = document.querySelectorAll(".search_form");
+	checkUser.forEach((elem) => {
+	  elem.addEventListener("submit", (e) => {
+		 e.preventDefault();
+		 let username = e.target.querySelector(".search__input").value;
+		 currentClient = username
+		 const body = JSON.stringify({ "username": username });
+		 fetch("/checkUser", {
+			method: "POST",
+			body: body,
+			headers: {
+			  "Content-Type": "application/json"
+			}
+		 }).then((response) => {
+			if (response.status === 200) {
+			  response.json().then(async (data) => {
+				 console.log(data.ownerMessage);
+				 console.log(data.ClientMessage);
+				 try {
+					let clientMessages = [];
+					let ownerMessages = [];
+ 
+					if (data.ClientMessage && data.ClientMessage.message.length > 0 && data.ClientMessage.time.length > 0) {
+					  const clM = data.ClientMessage.message[0];
+					  const clMTimes = data.ClientMessage.time[0];
+					  clientMessages = clM.map((message, index) => ({
+						 message,
+						 time: clMTimes[index],
+						 type: 'client',
+					  }));
+					  let parent = document.querySelector(".parent__li");
+					  let foo = parent.querySelector("li")
+					  while(foo){
+						parent.removeChild(foo)
+					  }
+					}
+ 
+					if (data.ownerMessage && data.ownerMessage.message.length > 0 && data.ownerMessage.time.length > 0) {
+					  const owM = data.ownerMessage.message[0];
+					  const owMTimes = data.ownerMessage.time[0];
+					  ownerMessages = owM.map((message, index) => ({
+						 message,
+						 time: owMTimes[index],
+						 type: 'owner',
+					  }));
+					}
+ 
+					const mergedMessages = [...clientMessages, ...ownerMessages];
+ 
+					mergedMessages.sort((a, b) => new Date(parseInt(a.time)) - new Date(parseInt(b.time)));
+ 
+					console.log(mergedMessages);
+ 
+					mergedMessages.forEach(elem => {
+					  let parent = document.querySelector(".parent__li");
+					  if (elem.type == 'client') {
+						 let li = document.createElement('li');
+						 li.className = 'client';
+						 li.innerHTML = `<p>${elem.message}</p>`;
+						 parent.appendChild(li);
+					  } else {
+						 let li = document.createElement('li');
+						 li.className = 'owner';
+						 li.innerHTML = `<p>${elem.message}</p>`;
+						 parent.appendChild(li);
+					  }
+					});
+				 } catch (e) {
+					console.log(e);
+				 }
+ 
+				 document.querySelector(".usernameId").value = data.usernameId;
+			  });
+			}
+		 }).catch((e) => console.log);
+	  });
+	});
+ 
+	const messageDataBase = document.querySelector(".SendMsg");
+	messageDataBase.addEventListener("submit", (e) => {
+	  e.preventDefault();
+	  let usernameId = document.querySelector(".usernameId").value;
+	  let message = document.querySelector(".message_input").value;
+	  const body = JSON.stringify({
+		 "usernameId": usernameId,
+		 "message": message
+	  });
+	  fetch("/sendMsg", {
+		 method: 'POST',
+		 body: body,
+		 headers: {
+			"Content-Type": "application/json"
+		 }
+	  }).then((response) => {
+		 if (response.status === 200) {
+			response.json().then((data) => {
+			  console.log(data);
+				//   socket.send(JSON.stringify({ "usernameId": usernameId, "message": message }));
+			  document.getElementById('textMessage').value = null;
+			  const parent = document.querySelector(".parent__li");
+			  let li = document.createElement('li');
+			  li.className = 'owner';
+			  li.innerHTML = `<p>${message}</p>`;
+			  parent.appendChild(li);
+			});
+		 }
+	  });
+	});
+
+	const parentClear = () => {
+		let parent = document.querySelector(".parent__li")
+		while(parent.hasChildNodes()) {
+			parent.removeChild(parent.firstChild)
+		}
+	}
+ </script>
+</body>
+</html>
