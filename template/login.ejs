@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Register</title>
+</head>
+<body>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		body {
+			background: url("static/white.jpg");
+		}
+		.body {
+			width: 100vw;
+			height: 100vh;
+		}
+		.right {
+			width: 50vw;
+			height: 100vh;
+			float: left;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+		.form {
+			height: 40vh;
+			width: 23vw;
+			background-color: rgb(221, 220, 220);
+			border-radius: 10px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+		.form > * {
+			display: grid;
+		}
+		.username {
+			padding: 7px 17px;
+			border: none;
+			border-bottom: .2em solid rgb(165, 161, 161);
+			border-radius: 4px;
+			margin-bottom: 7px;
+		}
+		.password {
+			padding: 7px 17px;
+			border: none;
+			border-bottom: .2em solid rgb(165, 161, 161);
+			border-radius: 4px;
+			margin-bottom: 7px;
+		}
+		.form__span__username, .form__span__password {
+			margin-bottom: 2px;
+			font-size: 17px;
+			font-family: 'Courier New', Courier, monospace;
+			font-weight: bold;
+			color: rgb(116, 114, 113);
+		}
+		.form__button {
+			margin-top: 5px;
+			padding: 3px;
+			border: 1px solid rgb(146, 146, 146);
+		}
+		.form__a {
+			text-decoration: none;
+			color: #2cb1e6;
+		}
+		.left {
+			height: 100vh;
+			width: 50vw;
+			float: right;
+			text-align: center;
+			background-color: #2cb1e6;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-flow: column;
+		}
+		.left > * {
+			color: rgb(235, 228, 228);
+			margin-top: 5px;
+		}
+		.form h2 {
+			margin: 15px 0;
+			font-size: 28px;
+			font-family: 'Courier New', Courier, monospace;
+			font-weight: bold;
+			color: rgb(87, 86, 85);
+		}
+	</style>
+	
+	<div class="body">
+		<div class="right">
+			<div class="form">
+				<form action="/auth/login" method="post">
+					<h2>Login</h2>
+					<span class="form__span__username">username</span>
+				<input type="text" name="username" class="username">
+				<span class="form__span__password">password</span>
+				<input type="text" name="password" class="password">
+				<button type="submit" class="form__button">register</button>
+				<a class="form__a" href="/register">Are you don't have an account? Register</a>
+			</form>
+			</div>
+		</div>
+		<div class="left">
+			<h2>It's my first chat application on Node js.</h2>
+			<h2>This application was created to show my skills and practice node js and websockets.</h2>
+		</div>
+	</div>
+
+</body>
+</html>
